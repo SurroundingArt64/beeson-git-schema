@@ -84,6 +84,6 @@ describe("test", () => {
     });
 
     /// schema definition
-    expect(beeSon).toBe;
+    expect(beeSon).toMatchObject({});
   });
 });
