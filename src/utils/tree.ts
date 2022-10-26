@@ -10,8 +10,6 @@ import { hashObject } from "./hashObject";
  *
  * In a repository using the traditional SHA-1, checksums and object IDs
  * (object names) mentioned below are all computed using SHA-1.
- * Similarly in SHA-256 repositories, these values are computed using SHA-256.
- * Version 2 is described here unless stated otherwise.
  */
 export class GitTree {
   /// 12 byte header
@@ -29,16 +27,70 @@ export class GitTree {
     return this._indexEntries;
   }
 
-  currentBuffer = Buffer.from([]);
+  private _currentBuffer = Buffer.from([]);
+  public get currentBuffer() {
+    return this._currentBuffer;
+  }
 
   private _repoPath: string;
   public get repoPath(): string {
     return this._repoPath;
   }
 
-  constructor(repoPath: string) {
-    this._repoPath = repoPath;
-    this.generateCurrentBuffer();
+  static fromBuffer(buf: Buffer): GitTree {
+    const _object = new GitTree();
+
+    _object._currentBuffer = buf;
+
+    _object._repoPath = "";
+    _object.deserialize();
+
+    return _object;
+  }
+
+  static create(repoPath: string): GitTree {
+    const _object = new GitTree();
+    _object._repoPath = repoPath;
+    _object.serialize();
+
+    return _object;
+  }
+
+  deserialize() {
+    let currentBuffer = this._currentBuffer;
+
+    assert(currentBuffer.subarray(0, 4).toString() === "DIRC");
+    assert(getNumberFromBuffer(currentBuffer.subarray(4, 8)) === 2);
+    const numberOfEntries = getNumberFromBuffer(currentBuffer.subarray(8, 12));
+
+    let leftOverBuffer = currentBuffer.subarray(12);
+
+    for (let index = 0; index < numberOfEntries; index++) {
+      let indexEntry = IndexEntry.withoutDeserialization(leftOverBuffer);
+      ({ leftOverBuffer } = indexEntry.deserialize());
+      this._indexEntries.push(indexEntry);
+    }
+
+    return { numberOfEntries };
+  }
+
+  private serialize() {
+    let currentBuffer = Buffer.from([]);
+    Object.entries(this.header).map(([_key, { value, length }]) => {
+      let buf = Buffer.alloc(length);
+      if (typeof value === "number") {
+        buf.writeInt32BE(value);
+      } else {
+        buf.write(value, length - value.length);
+      }
+      currentBuffer = Buffer.concat([currentBuffer, buf]);
+    });
+
+    this._indexEntries.forEach((e) => {
+      currentBuffer = Buffer.concat([currentBuffer, e.baseBuffer]);
+    });
+
+    this._currentBuffer = currentBuffer;
   }
 
   addIndexEntry(filePath: string) {
@@ -55,30 +107,11 @@ export class GitTree {
       return a.filePath.localeCompare(b.filePath);
     });
 
-    this.generateCurrentBuffer();
+    this.serialize();
 
     return this.indexEntries[
       this.indexEntries.map((e) => e.filePath).indexOf(filePath)
     ];
-  }
-
-  private generateCurrentBuffer() {
-    let currentBuffer = Buffer.from([]);
-    Object.entries(this.header).map(([_key, { value, length }]) => {
-      let buf = Buffer.alloc(length);
-      if (typeof value === "number") {
-        buf.writeInt16BE(value);
-      } else {
-        buf.write(value, length - value.length);
-      }
-      currentBuffer = Buffer.concat([currentBuffer, buf]);
-    });
-
-    this._indexEntries.forEach((e) => {
-      currentBuffer = Buffer.concat([currentBuffer, e.baseBuffer]);
-    });
-
-    this.currentBuffer = currentBuffer;
   }
 }
 
@@ -97,6 +130,16 @@ export class IndexEntry {
   private _filePath: string;
   public get filePath(): string {
     return this._filePath;
+  }
+
+  static withoutDeserialization(baseBuffer: Buffer): IndexEntry {
+    let _object = new IndexEntry();
+
+    _object._filePath = "";
+
+    _object._baseBuffer = baseBuffer;
+
+    return _object;
   }
 
   static fromBuffer(baseBuffer: Buffer): IndexEntry {
@@ -151,11 +194,30 @@ export class IndexEntry {
 
     const addedNullLength = 8 - (internalIndexLength % 8);
 
-    const leftOverBuffer = baseBuffer.subarray(
+    const compressedBuffer = baseBuffer.subarray(
       internalIndexLength + addedNullLength
     );
 
-    return { ...definitions, fileData: inflateSync(leftOverBuffer) };
+    const compressedLength = getNumberFromBuffer(
+      compressedBuffer.subarray(0, 4)
+    );
+
+    const fileData = inflateSync(
+      compressedBuffer.subarray(4, compressedLength + 4)
+    ).toString();
+
+    const leftOverBuffer = compressedBuffer.subarray(compressedLength + 4);
+
+    this._baseBuffer = this._baseBuffer.subarray(
+      0,
+      this._baseBuffer.length - leftOverBuffer.length
+    );
+
+    return {
+      ...definitions,
+      fileData: fileData,
+      leftOverBuffer,
+    };
   }
 
   serialize(repoPath: string) {
@@ -218,7 +280,15 @@ export class IndexEntry {
     baseBuffer = Buffer.concat([baseBuffer, buf]);
 
     /// add final file data here
-    baseBuffer = Buffer.concat([baseBuffer, getBlob(completePath)]);
+    const compressed = getBlob(completePath);
+
+    const compressedLenBuf = Buffer.alloc(4);
+
+    compressedLenBuf.writeInt32BE(compressed.length);
+
+    baseBuffer = Buffer.concat([baseBuffer, compressedLenBuf]);
+
+    baseBuffer = Buffer.concat([baseBuffer, compressed]);
 
     this._baseBuffer = baseBuffer;
   }

@@ -13,11 +13,17 @@ const run = async () => {
 
   console.log((await hashBlob({ object: "data" })).object);
 
-  const tree = new GitTree(join(__dirname, ".."));
-  const readmeIndexEntry = tree.addIndexEntry("README.md");
+  const tree = GitTree.create(join(__dirname, ".."));
+  const readMeEntry = tree.addIndexEntry("README.md");
+  const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
-  const data = readmeIndexEntry.deserialize();
-  console.log(data.fileData.toString());
+  console.log(gitIgnoreEntry.deserialize().fileData);
+  console.log(readMeEntry.deserialize().fileData);
+
+  const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer);
+  treeFromBuffer.indexEntries.map((e) => {
+    console.log(e.deserialize().fileData);
+  });
 };
 
 run();
