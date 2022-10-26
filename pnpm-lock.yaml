@@ -2,14 +2,12 @@ lockfileVersion: 5.4
 
 specifiers:
   '@types/node': ^18.11.5
-  ipld-git: ^0.6.6
   isomorphic-git: ^1.21.0
   ts-node: ^10.9.1
   typescript: ^4.8.4
 
 dependencies:
   '@types/node': 18.11.5
-  ipld-git: 0.6.6
   isomorphic-git: 1.21.0
   ts-node: 10.9.1_w23x7n7zvvy4jtcrbeyi4toj7i
   typescript: 4.8.4
@@ -37,10 +35,6 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.14
-    dev: false
-
-  /@multiformats/base-x/4.0.1:
-    resolution: {integrity: sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==}
     dev: false
 
   /@tsconfig/node10/1.0.9:
@@ -82,32 +76,6 @@ packages:
     resolution: {integrity: sha512-phnXdS3RP7PPcmP6NWWzWMU0sLTeyvtZCxBPpZdkYE3seGLKSQZs9FrmVO/qwypq98FUtWWUEYxziLkdGk5nnA==}
     dev: false
 
-  /base64-js/1.5.1:
-    resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
-    dev: false
-
-  /blakejs/1.2.1:
-    resolution: {integrity: sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==}
-    dev: false
-
-  /buffer/6.0.3:
-    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
-    dependencies:
-      base64-js: 1.5.1
-      ieee754: 1.2.1
-    dev: false
-
-  /cids/1.1.9:
-    resolution: {integrity: sha512-l11hWRfugIcbGuTZwAM5PwpjPPjyb6UZOGwlHSnOBV5o07XhQ4gNpBN67FbODvpjyHtd+0Xs6KNvUcGBiDRsdg==}
-    engines: {node: '>=4.0.0', npm: '>=3.0.0'}
-    deprecated: This module has been superseded by the multiformats module
-    dependencies:
-      multibase: 4.0.6
-      multicodec: 3.2.1
-      multihashes: 4.0.3
-      uint8arrays: 3.1.1
-    dev: false
-
   /clean-git-ref/2.0.1:
     resolution: {integrity: sha512-bLSptAy2P0s6hU4PzuIMKmMJJSE6gLXGH1cntDu7bWJUksvuM+7ReOK61mozULErYvP6a15rnYl0zFDef+pyPw==}
     dev: false
@@ -138,14 +106,6 @@ packages:
     resolution: {integrity: sha512-iSq8ngPOt0K53A6eVr4d5Kn6GNrM2nQZtC740pzIriHtn4pOQ2lyzEXQMBeVcWERN0ye7fhBsk9PbLLQOnUx/g==}
     dev: false
 
-  /err-code/3.0.1:
-    resolution: {integrity: sha512-GiaH0KJUewYok+eeY05IIgjtAe4Yltygk9Wqp1V5yVWLdhf0hYZchRjNIT9bb0mSwRcIusT3cx7PJUf3zEIfUA==}
-    dev: false
-
-  /ieee754/1.2.1:
-    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
-    dev: false
-
   /ignore/5.2.0:
     resolution: {integrity: sha512-CmxgYGiEPCLhfLnpPp1MoRmifwEIOgjcHXxOBjv7mY96c+eWScsOP9c112ZyLdWHi0FxHjI+4uVhKYp/gcdRmQ==}
     engines: {node: '>= 4'}
@@ -153,19 +113,6 @@ packages:
 
   /inherits/2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
-    dev: false
-
-  /ipld-git/0.6.6:
-    resolution: {integrity: sha512-2ua8hFaNk+bUQ/oxBXi+9AUzPB/GCihgpHqCUlHNFh0ebl2wiCgiz4ey1mXdXhSXJXS/JZ75zUBI16KZx1lCOA==}
-    engines: {node: '>=6.0.0', npm: '>=3.0.0'}
-    dependencies:
-      buffer: 6.0.3
-      cids: 1.1.9
-      multicodec: 3.2.1
-      multihashing-async: 2.1.4
-      smart-buffer: 4.2.0
-      strftime: 0.10.1
-      uint8arrays: 3.1.1
     dev: false
 
   /isomorphic-git/1.21.0:
@@ -186,10 +133,6 @@ packages:
       simple-get: 4.0.1
     dev: false
 
-  /js-sha3/0.8.0:
-    resolution: {integrity: sha512-gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==}
-    dev: false
-
   /make-error/1.3.6:
     resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
     dev: false
@@ -207,52 +150,6 @@ packages:
     resolution: {integrity: sha512-1oPjfuLQa2caorJUM8HV8lGgWCc0qqAO1MNv/k05G4qslmsndV/5WdNZrqCiyqiz3wohia2Ij2B7w2Dr7/IyrA==}
     dependencies:
       minimist: 1.2.7
-    dev: false
-
-  /multibase/4.0.6:
-    resolution: {integrity: sha512-x23pDe5+svdLz/k5JPGCVdfn7Q5mZVMBETiC+ORfO+sor9Sgs0smJzAjfTbM5tckeCqnaUuMYoz+k3RXMmJClQ==}
-    engines: {node: '>=12.0.0', npm: '>=6.0.0'}
-    deprecated: This module has been superseded by the multiformats module
-    dependencies:
-      '@multiformats/base-x': 4.0.1
-    dev: false
-
-  /multicodec/3.2.1:
-    resolution: {integrity: sha512-+expTPftro8VAW8kfvcuNNNBgb9gPeNYV9dn+z1kJRWF2vih+/S79f2RVeIwmrJBUJ6NT9IUPWnZDQvegEh5pw==}
-    deprecated: This module has been superseded by the multiformats module
-    dependencies:
-      uint8arrays: 3.1.1
-      varint: 6.0.0
-    dev: false
-
-  /multiformats/9.9.0:
-    resolution: {integrity: sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg==}
-    dev: false
-
-  /multihashes/4.0.3:
-    resolution: {integrity: sha512-0AhMH7Iu95XjDLxIeuCOOE4t9+vQZsACyKZ9Fxw2pcsRmlX4iCn1mby0hS0bb+nQOVpdQYWPpnyusw4da5RPhA==}
-    engines: {node: '>=12.0.0', npm: '>=6.0.0'}
-    dependencies:
-      multibase: 4.0.6
-      uint8arrays: 3.1.1
-      varint: 5.0.2
-    dev: false
-
-  /multihashing-async/2.1.4:
-    resolution: {integrity: sha512-sB1MiQXPSBTNRVSJc2zM157PXgDtud2nMFUEIvBrsq5Wv96sUclMRK/ecjoP1T/W61UJBqt4tCTwMkUpt2Gbzg==}
-    engines: {node: '>=12.0.0', npm: '>=6.0.0'}
-    dependencies:
-      blakejs: 1.2.1
-      err-code: 3.0.1
-      js-sha3: 0.8.0
-      multihashes: 4.0.3
-      murmurhash3js-revisited: 3.0.0
-      uint8arrays: 3.1.1
-    dev: false
-
-  /murmurhash3js-revisited/3.0.0:
-    resolution: {integrity: sha512-/sF3ee6zvScXMb1XFJ8gDsSnY+X8PbOyjIuBhtgis10W2Jx4ZjIhikUCIF9c4gpJxVnQIsPAFrSwTCuAjicP6g==}
-    engines: {node: '>=8.0.0'}
     dev: false
 
   /once/1.4.0:
@@ -303,16 +200,6 @@ packages:
       simple-concat: 1.0.1
     dev: false
 
-  /smart-buffer/4.2.0:
-    resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
-    engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
-    dev: false
-
-  /strftime/0.10.1:
-    resolution: {integrity: sha512-nVvH6JG8KlXFPC0f8lojLgEsPA18lRpLZ+RrJh/NkQV2tqOgZfbas8gcU8SFgnnqR3rWzZPYu6N2A3xzs/8rQg==}
-    engines: {node: '>=0.2.0'}
-    dev: false
-
   /string_decoder/1.3.0:
     resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
     dependencies:
@@ -356,26 +243,12 @@ packages:
     hasBin: true
     dev: false
 
-  /uint8arrays/3.1.1:
-    resolution: {integrity: sha512-+QJa8QRnbdXVpHYjLoTpJIdCTiw9Ir62nocClWuXIq2JIh4Uta0cQsTSpFL678p2CN8B+XSApwcU+pQEqVpKWg==}
-    dependencies:
-      multiformats: 9.9.0
-    dev: false
-
   /util-deprecate/1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: false
 
   /v8-compile-cache-lib/3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
-    dev: false
-
-  /varint/5.0.2:
-    resolution: {integrity: sha512-lKxKYG6H03yCZUpAGOPOsMcGxd1RHCu1iKvEHYDPmTyq2HueGhD73ssNBqqQWfvYs04G9iUFRvmAVLW20Jw6ow==}
-    dev: false
-
-  /varint/6.0.0:
-    resolution: {integrity: sha512-cXEIW6cfr15lFv563k4GuVuW/fiwjknytD37jIOLSdSWuOI6WnO/oKwmP2FQTU2l01LP8/M5TSAJpzUaGe3uWg==}
     dev: false
 
   /wrappy/1.0.2:

@@ -1,28 +1,21 @@
-import git from "isomorphic-git";
+import { hashBlob } from "isomorphic-git";
 import { join } from "path";
+import { hashObject } from "./utils/hashObject";
+import { GitTree, IndexEntries as IndexEntry } from "./utils/tree";
 
-export const serialize = async (
-  fileData: string,
-  type: "blob" | "commit" | "tree" | "tag" = "blob"
-) => {
-  if (type === "blob")
-    return await git.hashBlob({
-      object: fileData,
-    });
-  return;
+const run = async () => {
+  console.log(
+    hashObject({
+      data: "blob",
+      objectType: "blob",
+    })?.data
+  );
+
+  console.log((await hashBlob({ object: "data" })).object);
+
+  new GitTree();
+
+  new IndexEntry(join(__dirname, ".."), join("README.md"));
 };
 
-const main = async () => {
-  /// blob
-  console.log(await serialize("Hello"));
-
-  let sha = await git.resolveRef({
-    fs: require("fs"),
-    dir: join(__dirname, "..", ".git"),
-    ref: "master",
-  });
-
-  console.log(sha);
-};
-
-main();
+run();
