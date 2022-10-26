@@ -54,20 +54,19 @@ const run = async () => {
     committer: authorData,
     message: "feat: initial commit",
     treeHash: "",
+  }).entries.map((e) => {
+    if (e instanceof IndexEntry) {
+      console.log(
+        `${e.definitions.mode.value.toString(8)} blob ${
+          e.definitions.sha.value
+        }   ${e.filePath}`
+      );
+    } else {
+      console.log(`040000 tree ${e.sha}   ${e.filePath}`);
+    }
   });
-  // .entries.map((e) => {
-  //   if (e instanceof IndexEntry) {
-  //     console.log(
-  //       `${e.definitions.mode.value.toString(8)} blob ${
-  //         e.definitions.sha.value
-  //       }   ${e.filePath}`
-  //     );
-  //   } else {
-  //     console.log(`040000 tree ${e.sha}   ${e.filePath}`);
-  //   }
-  // });
 
-  // console.log(GitState.toArray(), { idxHash: GitState.indexCommitHash });
+  console.log(GitState.toArray(), { idxHash: GitState.indexCommitHash });
 };
 
 run();

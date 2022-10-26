@@ -74,9 +74,10 @@ export class GitState {
         parent: this.commits.at(-1),
       });
 
-      this.commits.push(createdCommit);
+      if (this.commits.at(-1)!.deserialize().tree !== this.root.sha) {
+        this.commits.push(createdCommit);
+      }
     }
-    this.commits.at(-1)!.deserialize();
 
     this.indexCommitHash = this.commits.at(-1)!.sha;
   }
