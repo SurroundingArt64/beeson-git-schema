@@ -2,6 +2,7 @@ import assert from "assert";
 import { readFileSync, statSync } from "fs";
 import { userInfo } from "os";
 import { resolve } from "path";
+import { deflateSync, inflateSync } from "zlib";
 import { hashObject } from "./hashObject";
 
 /**
@@ -148,7 +149,13 @@ export class IndexEntry {
     const internalIndexLength = 62 + definitions.flags.value;
     this._filePath = baseBuffer.subarray(62, internalIndexLength).toString();
 
-    return definitions;
+    const addedNullLength = 8 - (internalIndexLength % 8);
+
+    const leftOverBuffer = baseBuffer.subarray(
+      internalIndexLength + addedNullLength
+    );
+
+    return { ...definitions, fileData: inflateSync(leftOverBuffer) };
   }
 
   serialize(repoPath: string) {
@@ -210,6 +217,9 @@ export class IndexEntry {
 
     baseBuffer = Buffer.concat([baseBuffer, buf]);
 
+    /// add final file data here
+    baseBuffer = Buffer.concat([baseBuffer, getBlob(completePath)]);
+
     this._baseBuffer = baseBuffer;
   }
 }
@@ -242,3 +252,9 @@ function getFlags(base: number) {
     file_name_length,
   };
 }
+
+const getBlob = (completePath: string) => {
+  const data = readFileSync(completePath).toString();
+  const buf = deflateSync(data);
+  return buf;
+};

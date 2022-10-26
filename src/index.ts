@@ -17,7 +17,7 @@ const run = async () => {
   const readmeIndexEntry = tree.addIndexEntry("README.md");
 
   const data = readmeIndexEntry.deserialize();
-  console.log(data);
+  console.log(data.fileData.toString());
 };
 
 run();
