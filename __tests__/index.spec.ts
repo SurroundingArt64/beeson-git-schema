@@ -3,8 +3,21 @@ import { hashObject } from "../src/utils/hashObject";
 import { GitState, GitTree, IndexEntry } from "../src";
 import { join } from "path";
 import { BeeSon } from "@fairdatasociety/beeson";
+import { GitSchemaError } from "../src/error";
 describe("test", () => {
-  it("ok", async () => {
+  it("GitTree cannot add root as child", () => {
+    try {
+      GitTree.create(".").addTree(GitTree.create("."));
+    } catch (error) {
+      expect(error instanceof GitSchemaError).toBe(true);
+
+      if (error instanceof GitSchemaError) {
+        expect(error.message).toBe("Cannot have root as a child");
+      }
+    }
+  });
+
+  it("runs (ok)", async () => {
     console.log(
       hashObject({
         data: "blob",
@@ -19,6 +32,7 @@ describe("test", () => {
     const tree = GitTree.create(".");
 
     const readMeEntry = tree.addIndexEntry("README.md");
+    tree.addIndexEntry("README.md");
     const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
     console.log("====from initial====");
