@@ -4,6 +4,9 @@ import { GitState } from "./GitState";
 import { hashObject } from "./utils/hashObject";
 import { GitTree } from "./utils/tree";
 import { IndexEntry } from "./utils/indexEntry";
+import { BeeSon } from "@fairdatasociety/beeson";
+
+export { GitState, GitTree, IndexEntry };
 
 const run = async () => {
   console.log(
@@ -66,7 +69,12 @@ const run = async () => {
     }
   });
 
-  console.log(GitState.toArray(), { idxHash: GitState.indexCommitHash });
+  const beeSon = new BeeSon({
+    json: { refs: GitState.toArray(), indexHash: GitState.indexCommitHash },
+  });
+
+  /// schema definition
+  console.log(beeSon);
 };
 
 run();
