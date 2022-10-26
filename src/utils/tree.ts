@@ -5,6 +5,13 @@ import { resolve } from "path";
 import { deflateSync, inflateSync } from "zlib";
 import { hashObject } from "./hashObject";
 
+type ObjectsType = {
+  [key: string]: {
+    data: Buffer;
+    type: "blob" | "commit" | "tree";
+  };
+};
+
 /**
  * All binary numbers are in network byte order.
  *
@@ -37,10 +44,12 @@ export class GitTree {
     return this._repoPath;
   }
 
-  static fromBuffer(buf: Buffer): GitTree {
+  static fromBuffer(buf: Buffer, gitObjects: ObjectsType): GitTree {
     const _object = new GitTree();
 
     _object._currentBuffer = buf;
+
+    _object._objects = gitObjects;
 
     _object._repoPath = "";
     _object.deserialize();
@@ -56,9 +65,13 @@ export class GitTree {
     return _object;
   }
 
-  objects: {
+  private _objects: ObjectsType = {};
+
+  public get objects(): {
     [key: string]: { data: Buffer; type: "blob" | "commit" | "tree" };
-  } = {};
+  } {
+    return this._objects;
+  }
 
   deserialize() {
     let currentBuffer = this._currentBuffer;
@@ -72,6 +85,9 @@ export class GitTree {
     for (let index = 0; index < numberOfEntries; index++) {
       let indexEntry = IndexEntry.withoutDeserialization(leftOverBuffer);
       ({ leftOverBuffer } = indexEntry.deserialize());
+      indexEntry.updateCompressed(
+        this.objects[indexEntry.definitions.sha.value].data
+      );
       this._indexEntries.push(indexEntry);
     }
 
@@ -141,6 +157,14 @@ export class IndexEntry {
   private _compressed: Buffer;
   public get compressed(): Buffer {
     return this._compressed;
+  }
+
+  updateCompressed(compressed: Buffer) {
+    this._compressed = compressed;
+  }
+
+  getFileData() {
+    return inflateSync(this._compressed).toString();
   }
 
   public get baseBuffer() {
@@ -265,21 +289,21 @@ export class IndexEntry {
 
     const addedNullLength = 8 - (internalIndexLength % 8);
 
-    const compressedBuffer = baseBuffer.subarray(
+    const leftOverBuffer = baseBuffer.subarray(
       internalIndexLength + addedNullLength
     );
 
-    const compressedLength = getNumberFromBuffer(
-      compressedBuffer.subarray(0, 4)
-    );
+    // const compressedLength = getNumberFromBuffer(
+    //   compressedBuffer.subarray(0, 4)
+    // );
 
-    const fileData = inflateSync(
-      compressedBuffer.subarray(4, compressedLength + 4)
-    ).toString();
+    // const fileData = inflateSync(
+    //   compressedBuffer.subarray(4, compressedLength + 4)
+    // ).toString();
 
-    this._compressed = compressedBuffer.subarray(4, compressedLength + 4);
+    // this._compressed = compressedBuffer.subarray(4, compressedLength + 4);
 
-    const leftOverBuffer = compressedBuffer.subarray(compressedLength + 4);
+    // const leftOverBuffer = compressedBuffer.subarray(compressedLength + 4);
 
     this._baseBuffer = this._baseBuffer.subarray(
       0,
@@ -288,7 +312,6 @@ export class IndexEntry {
 
     return {
       ...definitions,
-      fileData: fileData,
       leftOverBuffer,
     };
   }
@@ -358,14 +381,6 @@ export class IndexEntry {
     /// add final file data here
     const compressed = getBlob(completePath);
     this._compressed = compressed;
-
-    const compressedLenBuf = Buffer.alloc(4);
-
-    compressedLenBuf.writeInt32BE(compressed.length);
-
-    baseBuffer = Buffer.concat([baseBuffer, compressedLenBuf]);
-
-    baseBuffer = Buffer.concat([baseBuffer, compressed]);
 
     this._baseBuffer = baseBuffer;
   }

@@ -18,13 +18,17 @@ const run = async () => {
   const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
   console.log("====from initial====");
-  console.log(gitIgnoreEntry.deserialize().fileData);
-  console.log(readMeEntry.deserialize().fileData);
+  gitIgnoreEntry.deserialize();
+  console.log(gitIgnoreEntry.filePath);
+  readMeEntry.deserialize();
+  console.log(readMeEntry.filePath);
 
   console.log("====from buffer====");
-  const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer);
+  const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer, tree.objects);
+
   treeFromBuffer.indexEntries.map((e) => {
-    console.log(e.deserialize().fileData);
+    e.deserialize();
+    console.log(e.filePath, e.getFileData());
   });
 };
 
