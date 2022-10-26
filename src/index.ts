@@ -1,7 +1,7 @@
 import { hashBlob } from "isomorphic-git";
 import { join } from "path";
 import { hashObject } from "./utils/hashObject";
-import { GitTree, IndexEntries as IndexEntry } from "./utils/tree";
+import { GitTree } from "./utils/tree";
 
 const run = async () => {
   console.log(
@@ -13,9 +13,11 @@ const run = async () => {
 
   console.log((await hashBlob({ object: "data" })).object);
 
-  new GitTree();
+  const tree = new GitTree(join(__dirname, ".."));
+  const readmeIndexEntry = tree.addIndexEntry("README.md");
 
-  new IndexEntry(join(__dirname, ".."), join("README.md"));
+  const data = readmeIndexEntry.deserialize();
+  console.log(data);
 };
 
 run();

@@ -18,20 +18,66 @@ export class GitTree {
     /// 4-byte signature
     signature: { value: "DIRC", length: 4 },
     /// 4-byte version number
-    version: { value: "2", length: 4 },
+    version: { value: 2, length: 4 },
     /// 32-bit number of index entries
-    entries: { value: "0", length: 4 },
+    entries: { value: 0, length: 4 },
   };
 
-  currentBuffer: Uint8Array[];
+  private _indexEntries: IndexEntry[] = [];
+  public get indexEntries(): IndexEntry[] {
+    return this._indexEntries;
+  }
 
-  constructor() {
-    let buffers: any[] = [];
+  currentBuffer = Buffer.from([]);
+
+  private _repoPath: string;
+  public get repoPath(): string {
+    return this._repoPath;
+  }
+
+  constructor(repoPath: string) {
+    this._repoPath = repoPath;
+    this.generateCurrentBuffer();
+  }
+
+  addIndexEntry(filePath: string) {
+    const loc = this.indexEntries.map((e) => e.filePath).indexOf(filePath);
+    if (loc === -1) {
+      this.indexEntries.push(IndexEntry.create(this._repoPath, filePath));
+    } else {
+      this.indexEntries[loc].serialize(this._repoPath);
+    }
+
+    this.header.entries.value = this.indexEntries.length;
+
+    this.indexEntries.sort((a, b) => {
+      return a.filePath.localeCompare(b.filePath);
+    });
+
+    this.generateCurrentBuffer();
+
+    return this.indexEntries[
+      this.indexEntries.map((e) => e.filePath).indexOf(filePath)
+    ];
+  }
+
+  private generateCurrentBuffer() {
+    let currentBuffer = Buffer.from([]);
     Object.entries(this.header).map(([_key, { value, length }]) => {
       let buf = Buffer.alloc(length);
-      buf.write(value, length - value.length);
-      buffers.push(buf);
+      if (typeof value === "number") {
+        buf.writeInt16BE(value);
+      } else {
+        buf.write(value, length - value.length);
+      }
+      currentBuffer = Buffer.concat([currentBuffer, buf]);
     });
+
+    this._indexEntries.forEach((e) => {
+      currentBuffer = Buffer.concat([currentBuffer, e.baseBuffer]);
+    });
+
+    this.currentBuffer = currentBuffer;
   }
 }
 
@@ -41,8 +87,72 @@ export class GitTree {
  * localization, no special casing of directory separator '/'). Entries
  * with the same name are sorted by their stage field.
  */
-export class IndexEntries {
-  constructor(repoPath: string, filePath: string) {
+export class IndexEntry {
+  private _baseBuffer = Buffer.from([]);
+  public get baseBuffer() {
+    return this._baseBuffer;
+  }
+
+  private _filePath: string;
+  public get filePath(): string {
+    return this._filePath;
+  }
+
+  static fromBuffer(baseBuffer: Buffer): IndexEntry {
+    let _object = new IndexEntry();
+
+    _object._filePath = "";
+
+    _object._baseBuffer = baseBuffer;
+
+    _object.deserialize();
+
+    return _object;
+  }
+
+  static create(repoPath: string, filePath: string): IndexEntry {
+    let _object = new IndexEntry();
+
+    _object._filePath = filePath;
+
+    _object.serialize(repoPath);
+
+    return _object;
+  }
+
+  deserialize() {
+    let baseBuffer = this._baseBuffer;
+
+    const definitions = {
+      ctime: {
+        value: getNumberFromBuffer(baseBuffer.subarray(0, 4)),
+      },
+      ctimeNano: { value: getNumberFromBuffer(baseBuffer.subarray(4, 8)) },
+      /// metadata
+      mtime: { value: getNumberFromBuffer(baseBuffer.subarray(8, 12)) },
+      mtimeNano: { value: getNumberFromBuffer(baseBuffer.subarray(12, 16)) },
+      /// dev id
+      dev: { value: getNumberFromBuffer(baseBuffer.subarray(16, 20)) },
+      ino: { value: getNumberFromBuffer(baseBuffer.subarray(20, 24)) },
+      mode: { value: getNumberFromBuffer(baseBuffer.subarray(24, 28)) },
+      uid: { value: getNumberFromBuffer(baseBuffer.subarray(28, 32)) },
+      gid: { value: getNumberFromBuffer(baseBuffer.subarray(32, 36)) },
+      fileSize: { value: getNumberFromBuffer(baseBuffer.subarray(36, 40)) },
+      sha: { value: baseBuffer.subarray(40, 60).toString("hex") },
+      flags: {
+        value: getFlags(getNumberFromBuffer(baseBuffer.subarray(60, 62)))
+          .file_name_length,
+      },
+    };
+
+    const internalIndexLength = 62 + definitions.flags.value;
+    this._filePath = baseBuffer.subarray(62, internalIndexLength).toString();
+
+    return definitions;
+  }
+
+  serialize(repoPath: string) {
+    const filePath = this._filePath;
     let baseBuffer = Buffer.from([]);
     const completePath = resolve(repoPath, filePath);
 
@@ -89,17 +199,46 @@ export class IndexEntries {
         buf = Buffer.from(sha, "hex");
       }
       baseBuffer = Buffer.concat([baseBuffer, buf]);
-      console.log(baseBuffer.length);
     });
 
-    // const buf = Buffer.alloc(filePathLength);
-    // buf.write(filePath + "\0");
+    const addedNullLength = 8 - ((baseBuffer.length + filePathLength) % 8);
+    const addedNull = Array.from({ length: addedNullLength }, () => "\0").join(
+      ""
+    );
+    const buf = Buffer.alloc(filePathLength + addedNullLength);
+    buf.write(filePath + addedNull);
 
-    // baseBuffer = Buffer.concat([baseBuffer, buf]);
-    // console.log(baseBuffer.length);
+    baseBuffer = Buffer.concat([baseBuffer, buf]);
+
+    this._baseBuffer = baseBuffer;
   }
 }
 
 function msToNano(timeInMs: number) {
   return ((timeInMs * 1000) % 1000000) * 1000;
+}
+
+function getNumberFromBuffer(buf: Buffer) {
+  return Number("0x" + buf.toString("hex"));
+}
+
+function getFlags(base: number) {
+  let baseEncoded = base.toString(2);
+  baseEncoded =
+    new Array(16 - baseEncoded.length).fill(0).join("") + baseEncoded;
+  /// ignored
+  const valid_flag = baseEncoded.slice(0, 1);
+  /// ignored
+  const extended_flag = baseEncoded.slice(1, 2);
+  /// ignored
+  const stage_flag = Number(baseEncoded.slice(2, 4));
+  /// ignored
+  const file_name_length = Number("0b" + baseEncoded.slice(4));
+  return {
+    base: baseEncoded,
+    valid_flag,
+    extended_flag,
+    stage_flag,
+    file_name_length,
+  };
 }
