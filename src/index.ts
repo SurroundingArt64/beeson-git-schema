@@ -17,9 +17,11 @@ const run = async () => {
   const readMeEntry = tree.addIndexEntry("README.md");
   const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
+  console.log("====from initial====");
   console.log(gitIgnoreEntry.deserialize().fileData);
   console.log(readMeEntry.deserialize().fileData);
 
+  console.log("====from buffer====");
   const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer);
   treeFromBuffer.indexEntries.map((e) => {
     console.log(e.deserialize().fileData);

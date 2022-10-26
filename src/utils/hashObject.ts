@@ -1,6 +1,6 @@
 import { GitSchemaError } from "../error";
 import * as crypto from "crypto";
-type ObjectType = "blob" | "commit";
+type ObjectType = "blob" | "commit" | "tree";
 
 type ShaVersion = "sha1" | "sha256";
 

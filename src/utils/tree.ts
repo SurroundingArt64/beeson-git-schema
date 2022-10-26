@@ -56,6 +56,10 @@ export class GitTree {
     return _object;
   }
 
+  objects: {
+    [key: string]: { data: Buffer; type: "blob" | "commit" | "tree" };
+  } = {};
+
   deserialize() {
     let currentBuffer = this._currentBuffer;
 
@@ -95,8 +99,18 @@ export class GitTree {
 
   addIndexEntry(filePath: string) {
     const loc = this.indexEntries.map((e) => e.filePath).indexOf(filePath);
+    const indexEntry =
+      loc === -1
+        ? IndexEntry.create(this._repoPath, filePath)
+        : this.indexEntries[loc];
+
+    this.objects[indexEntry.definitions.sha.value] = {
+      data: indexEntry.compressed,
+      type: "blob",
+    };
+
     if (loc === -1) {
-      this.indexEntries.push(IndexEntry.create(this._repoPath, filePath));
+      this.indexEntries.push(indexEntry);
     } else {
       this.indexEntries[loc].serialize(this._repoPath);
     }
@@ -123,6 +137,12 @@ export class GitTree {
  */
 export class IndexEntry {
   private _baseBuffer = Buffer.from([]);
+
+  private _compressed: Buffer;
+  public get compressed(): Buffer {
+    return this._compressed;
+  }
+
   public get baseBuffer() {
     return this._baseBuffer;
   }
@@ -164,30 +184,81 @@ export class IndexEntry {
     return _object;
   }
 
+  definitions: {
+    ctime: { value: number; length?: number };
+    ctimeNano: { value: number; length?: number };
+    /// metadata
+    mtime: { value: number; length?: number };
+    mtimeNano: { value: number; length?: number };
+    /// dev id
+    dev: { value: number; length?: number };
+    ino: { value: number; length?: number };
+    mode: { value: number; length?: number };
+    uid: { value: number; length?: number };
+    gid: { value: number; length?: number };
+    fileSize: { value: number; length?: number };
+    sha: { value: string; length?: number };
+    flags: {
+      value: number;
+      length?: number;
+    };
+  };
+
   deserialize() {
     let baseBuffer = this._baseBuffer;
 
     const definitions = {
       ctime: {
         value: getNumberFromBuffer(baseBuffer.subarray(0, 4)),
+        length: 4,
       },
-      ctimeNano: { value: getNumberFromBuffer(baseBuffer.subarray(4, 8)) },
+      ctimeNano: {
+        value: getNumberFromBuffer(baseBuffer.subarray(4, 8)),
+        length: 4,
+      },
       /// metadata
-      mtime: { value: getNumberFromBuffer(baseBuffer.subarray(8, 12)) },
-      mtimeNano: { value: getNumberFromBuffer(baseBuffer.subarray(12, 16)) },
+      mtime: {
+        value: getNumberFromBuffer(baseBuffer.subarray(8, 12)),
+        length: 4,
+      },
+      mtimeNano: {
+        value: getNumberFromBuffer(baseBuffer.subarray(12, 16)),
+        length: 4,
+      },
       /// dev id
-      dev: { value: getNumberFromBuffer(baseBuffer.subarray(16, 20)) },
-      ino: { value: getNumberFromBuffer(baseBuffer.subarray(20, 24)) },
-      mode: { value: getNumberFromBuffer(baseBuffer.subarray(24, 28)) },
-      uid: { value: getNumberFromBuffer(baseBuffer.subarray(28, 32)) },
-      gid: { value: getNumberFromBuffer(baseBuffer.subarray(32, 36)) },
-      fileSize: { value: getNumberFromBuffer(baseBuffer.subarray(36, 40)) },
-      sha: { value: baseBuffer.subarray(40, 60).toString("hex") },
+      dev: {
+        value: getNumberFromBuffer(baseBuffer.subarray(16, 20)),
+        length: 4,
+      },
+      ino: {
+        value: getNumberFromBuffer(baseBuffer.subarray(20, 24)),
+        length: 4,
+      },
+      mode: {
+        value: getNumberFromBuffer(baseBuffer.subarray(24, 28)),
+        length: 4,
+      },
+      uid: {
+        value: getNumberFromBuffer(baseBuffer.subarray(28, 32)),
+        length: 4,
+      },
+      gid: {
+        value: getNumberFromBuffer(baseBuffer.subarray(32, 36)),
+        length: 4,
+      },
+      fileSize: {
+        value: getNumberFromBuffer(baseBuffer.subarray(36, 40)),
+        length: 4,
+      },
+      sha: { value: baseBuffer.subarray(40, 60).toString("hex"), length: 20 },
       flags: {
         value: getFlags(getNumberFromBuffer(baseBuffer.subarray(60, 62)))
           .file_name_length,
+        length: 2,
       },
     };
+
+    this.definitions = definitions;
 
     const internalIndexLength = 62 + definitions.flags.value;
     this._filePath = baseBuffer.subarray(62, internalIndexLength).toString();
@@ -205,6 +276,8 @@ export class IndexEntry {
     const fileData = inflateSync(
       compressedBuffer.subarray(4, compressedLength + 4)
     ).toString();
+
+    this._compressed = compressedBuffer.subarray(4, compressedLength + 4);
 
     const leftOverBuffer = compressedBuffer.subarray(compressedLength + 4);
 
@@ -255,6 +328,9 @@ export class IndexEntry {
         length: 2,
       },
     };
+
+    this.definitions = definitions;
+
     Object.entries(definitions).map(([key, { value, length }]) => {
       let buf = Buffer.alloc(length);
       if (typeof value === "number") {
@@ -281,6 +357,7 @@ export class IndexEntry {
 
     /// add final file data here
     const compressed = getBlob(completePath);
+    this._compressed = compressed;
 
     const compressedLenBuf = Buffer.alloc(4);
 
