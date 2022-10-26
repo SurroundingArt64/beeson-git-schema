@@ -1,7 +1,8 @@
 import { hashBlob } from "isomorphic-git";
 import { join } from "path";
+import { GitState } from "./GitState";
 import { hashObject } from "./utils/hashObject";
-import { GitTree } from "./utils/tree";
+import { GitTree, IndexEntry } from "./utils/tree";
 
 const run = async () => {
   console.log(
@@ -13,7 +14,10 @@ const run = async () => {
 
   console.log((await hashBlob({ object: "data" })).object);
 
-  const tree = GitTree.create(join(__dirname, ".."));
+  GitState.initialize(join(__dirname, ".."));
+
+  const tree = GitTree.create(".");
+
   const readMeEntry = tree.addIndexEntry("README.md");
   const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
@@ -24,12 +28,32 @@ const run = async () => {
   console.log(readMeEntry.filePath);
 
   console.log("====from buffer====");
-  const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer, tree.objects);
+  const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer, ".");
 
-  treeFromBuffer.indexEntries.map((e) => {
+  treeFromBuffer.entries.map((e) => {
     e.deserialize();
-    console.log(e.filePath, e.getFileData());
+    if (e instanceof IndexEntry) {
+      console.log(e.filePath, e.getFileData());
+    }
   });
+
+  // complete end to end flow
+  GitState.resetState();
+  GitState.initializeTree(join(__dirname, "..", "test_repo")).entries.map(
+    (e) => {
+      if (e instanceof IndexEntry) {
+        console.log(
+          `${e.definitions.mode.value.toString(8)} blob ${
+            e.definitions.sha.value
+          }   ${e.filePath}`
+        );
+      } else {
+        console.log(`040000 tree ${e.sha}   ${e.filePath}`);
+      }
+    }
+  );
+
+  console.log(GitState.objects);
 };
 
 run();

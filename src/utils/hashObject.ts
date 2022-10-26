@@ -21,18 +21,8 @@ export const hashObject = ({
     throw new GitSchemaError("Nothing to hash");
   }
 
-  if (objectType === "blob") {
-    const dataToHash = `${objectType} ${data.length}\0${data.toString()}`;
-    const hash = crypto
-      .createHash(shaVersion!)
-      .update(dataToHash)
-      .digest("hex");
+  const dataToHash = `${objectType} ${data.length}\0${data.toString()}`;
+  const hash = crypto.createHash(shaVersion!).update(dataToHash).digest("hex");
 
-    return { hash, data: new TextEncoder().encode(dataToHash) };
-  }
-
-  if (objectType === "commit") {
-  }
-
-  return;
+  return { hash, data: new TextEncoder().encode(dataToHash) };
 };

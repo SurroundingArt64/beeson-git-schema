@@ -2,15 +2,10 @@ import assert from "assert";
 import { readFileSync, statSync } from "fs";
 import { userInfo } from "os";
 import { resolve } from "path";
+import { GitState } from "../GitState";
 import { deflateSync, inflateSync } from "zlib";
 import { hashObject } from "./hashObject";
-
-type ObjectsType = {
-  [key: string]: {
-    data: Buffer;
-    type: "blob" | "commit" | "tree";
-  };
-};
+import { GitSchemaError } from "../error";
 
 /**
  * All binary numbers are in network byte order.
@@ -29,8 +24,18 @@ export class GitTree {
     entries: { value: 0, length: 4 },
   };
 
-  private _indexEntries: IndexEntry[] = [];
-  public get indexEntries(): IndexEntry[] {
+  private _sha: string;
+  public get sha(): string {
+    return this._sha;
+  }
+
+  private _filePath: string;
+  public get filePath(): string {
+    return this._filePath;
+  }
+
+  private _indexEntries: (IndexEntry | GitTree)[] = [];
+  public get entries(): (IndexEntry | GitTree)[] {
     return this._indexEntries;
   }
 
@@ -39,38 +44,26 @@ export class GitTree {
     return this._currentBuffer;
   }
 
-  private _repoPath: string;
-  public get repoPath(): string {
-    return this._repoPath;
-  }
-
-  static fromBuffer(buf: Buffer, gitObjects: ObjectsType): GitTree {
+  static fromBuffer(buf: Buffer, filePath: string): GitTree {
     const _object = new GitTree();
 
     _object._currentBuffer = buf;
 
-    _object._objects = gitObjects;
+    _object._filePath = filePath;
 
-    _object._repoPath = "";
     _object.deserialize();
 
     return _object;
   }
 
-  static create(repoPath: string): GitTree {
+  static create(filePath: string): GitTree {
     const _object = new GitTree();
-    _object._repoPath = repoPath;
+
     _object.serialize();
 
+    _object._filePath = filePath;
+
     return _object;
-  }
-
-  private _objects: ObjectsType = {};
-
-  public get objects(): {
-    [key: string]: { data: Buffer; type: "blob" | "commit" | "tree" };
-  } {
-    return this._objects;
   }
 
   deserialize() {
@@ -86,10 +79,15 @@ export class GitTree {
       let indexEntry = IndexEntry.withoutDeserialization(leftOverBuffer);
       ({ leftOverBuffer } = indexEntry.deserialize());
       indexEntry.updateCompressed(
-        this.objects[indexEntry.definitions.sha.value].data
+        GitState.objects[indexEntry.definitions.sha.value].data
       );
       this._indexEntries.push(indexEntry);
     }
+
+    this._sha = hashObject({
+      data: this._currentBuffer.toString(),
+      objectType: "tree",
+    }).hash;
 
     return { numberOfEntries };
   }
@@ -107,41 +105,71 @@ export class GitTree {
     });
 
     this._indexEntries.forEach((e) => {
-      currentBuffer = Buffer.concat([currentBuffer, e.baseBuffer]);
+      currentBuffer = Buffer.concat([currentBuffer, e.currentBuffer]);
     });
 
     this._currentBuffer = currentBuffer;
+
+    this._sha = hashObject({
+      data: this._currentBuffer.toString(),
+      objectType: "tree",
+    }).hash;
+  }
+
+  addTree(tree: GitTree) {
+    const loc = this.entries.map((e) => e.filePath).indexOf(tree.filePath);
+
+    if (loc === -1) {
+      this.entries.push(tree);
+    }
+    this.entries.sort((a, b) => {
+      if (b.filePath === "." || a.filePath === ".") {
+        throw new GitSchemaError("Cannot have root as a child");
+      }
+      return a.filePath.localeCompare(b.filePath);
+    });
+
+    this.header.entries.value = this.entries.length;
+
+    GitState.objects[tree.sha] = {
+      data: tree.currentBuffer,
+      type: "tree",
+    };
   }
 
   addIndexEntry(filePath: string) {
-    const loc = this.indexEntries.map((e) => e.filePath).indexOf(filePath);
+    const loc = this.entries.map((e) => e.filePath).indexOf(filePath);
+
     const indexEntry =
       loc === -1
-        ? IndexEntry.create(this._repoPath, filePath)
-        : this.indexEntries[loc];
+        ? IndexEntry.create(GitState.repoPath, filePath)
+        : this.entries[loc];
 
-    this.objects[indexEntry.definitions.sha.value] = {
-      data: indexEntry.compressed,
-      type: "blob",
-    };
+    if (indexEntry instanceof IndexEntry) {
+      GitState.objects[indexEntry.definitions.sha.value] = {
+        data: indexEntry.compressed,
+        type: "blob",
+      };
 
-    if (loc === -1) {
-      this.indexEntries.push(indexEntry);
-    } else {
-      this.indexEntries[loc].serialize(this._repoPath);
+      if (loc === -1) {
+        this.entries.push(indexEntry);
+      } else {
+        (this.entries[loc] as IndexEntry).serialize(GitState.repoPath);
+      }
     }
 
-    this.header.entries.value = this.indexEntries.length;
+    this.header.entries.value = this.entries.length;
 
-    this.indexEntries.sort((a, b) => {
+    this.entries.sort((a, b) => {
+      if (b.filePath === "." || a.filePath === ".") {
+        throw new GitSchemaError("Cannot have root as a child");
+      }
       return a.filePath.localeCompare(b.filePath);
     });
 
     this.serialize();
 
-    return this.indexEntries[
-      this.indexEntries.map((e) => e.filePath).indexOf(filePath)
-    ];
+    return this.entries[this.entries.map((e) => e.filePath).indexOf(filePath)];
   }
 }
 
@@ -152,7 +180,7 @@ export class GitTree {
  * with the same name are sorted by their stage field.
  */
 export class IndexEntry {
-  private _baseBuffer = Buffer.from([]);
+  private _currentBuffer = Buffer.from([]);
 
   private _compressed: Buffer;
   public get compressed(): Buffer {
@@ -167,8 +195,8 @@ export class IndexEntry {
     return inflateSync(this._compressed).toString();
   }
 
-  public get baseBuffer() {
-    return this._baseBuffer;
+  public get currentBuffer() {
+    return this._currentBuffer;
   }
 
   private _filePath: string;
@@ -181,7 +209,7 @@ export class IndexEntry {
 
     _object._filePath = "";
 
-    _object._baseBuffer = baseBuffer;
+    _object._currentBuffer = baseBuffer;
 
     return _object;
   }
@@ -191,7 +219,7 @@ export class IndexEntry {
 
     _object._filePath = "";
 
-    _object._baseBuffer = baseBuffer;
+    _object._currentBuffer = baseBuffer;
 
     _object.deserialize();
 
@@ -229,7 +257,7 @@ export class IndexEntry {
   };
 
   deserialize() {
-    let baseBuffer = this._baseBuffer;
+    let baseBuffer = this._currentBuffer;
 
     const definitions = {
       ctime: {
@@ -305,9 +333,9 @@ export class IndexEntry {
 
     // const leftOverBuffer = compressedBuffer.subarray(compressedLength + 4);
 
-    this._baseBuffer = this._baseBuffer.subarray(
+    this._currentBuffer = this._currentBuffer.subarray(
       0,
-      this._baseBuffer.length - leftOverBuffer.length
+      this._currentBuffer.length - leftOverBuffer.length
     );
 
     return {
@@ -320,7 +348,6 @@ export class IndexEntry {
     const filePath = this._filePath;
     let baseBuffer = Buffer.from([]);
     const completePath = resolve(repoPath, filePath);
-
     const stats = statSync(completePath);
     const ctime = Math.floor(stats.ctimeMs / 1000);
     const mtime = Math.floor(stats.mtimeMs / 1000);
@@ -382,7 +409,7 @@ export class IndexEntry {
     const compressed = getBlob(completePath);
     this._compressed = compressed;
 
-    this._baseBuffer = baseBuffer;
+    this._currentBuffer = baseBuffer;
   }
 }
 
