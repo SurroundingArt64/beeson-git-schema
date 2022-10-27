@@ -2,7 +2,9 @@
 
 A git utility for beeson
 
-[![npm version](https://img.shields.io/npm/v/git-beeson-schema.svg?label=npm&color=brightgreen)](https://www.npmjs.com/package/git-beeson-schema)
+<a href="https://www.npmjs.com/package/git-beeson-schema">
+  <img src="https://img.shields.io/npm/v/git-beeson-schema.svg?label=npm&color=brightgreen" alt="npm version">
+</a>
 
 ## Usage
 
