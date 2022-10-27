@@ -4,7 +4,7 @@ import { userInfo } from "os";
 import { resolve } from "path";
 import { inflateSync } from "zlib";
 import { hashObject } from "./hashObject";
-import { getNumberFromBuffer, getFlags, msToNano, getBlob } from "./tree";
+import { getNumberFromBuffer, getFlags, msToNano, getBlob } from ".";
 
 /**
  * Index entries are sorted in ascending order on the name field,

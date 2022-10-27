@@ -1,4 +1,3 @@
-import { hashBlob } from "isomorphic-git";
 import { join } from "path";
 import { GitState } from "./GitState";
 import { hashObject } from "./utils/hashObject";
@@ -16,7 +15,6 @@ if (process.env.NODE_RUN_TEST === "true") {
       })?.data
     );
 
-    console.log((await hashBlob({ object: "data" })).object);
 
     const gitState = new GitState();
 
