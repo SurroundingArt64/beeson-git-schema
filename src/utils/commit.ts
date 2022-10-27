@@ -26,28 +26,36 @@ export class Commit {
     return this._currentBuffer;
   }
 
+  private _gitState: GitState;
+  public get gitState(): GitState {
+    return this._gitState;
+  }
+  public set gitState(value: GitState) {
+    this._gitState = value;
+  }
+
   private _sha: string = "";
   public get sha(): string {
     return this._sha;
   }
 
-  static create({
-    treeHash,
-    parent,
-    author,
-    committer,
-    message,
-  }: CommitConstructor): Commit {
+  static create(
+    gitState: GitState,
+    { treeHash, parent, author, committer, message }: CommitConstructor
+  ): Commit {
     let _commit = new Commit();
-    _commit.serialize(treeHash, parent, author, committer, message);
+    _commit._gitState = gitState;
 
+    _commit.serialize(treeHash, parent, author, committer, message);
     return _commit;
   }
 
-  static fromBuffer(buf: Buffer): Commit {
+  static fromBuffer(gitState: GitState, buf: Buffer): Commit {
     let _commit = new Commit();
 
     _commit._currentBuffer = buf;
+
+    _commit._gitState = gitState;
 
     _commit.deserialize();
 
@@ -111,7 +119,7 @@ export class Commit {
 
     this._currentBuffer = Buffer.from(data.join("\n"));
 
-    GitState.objects[this.sha] = {
+    this._gitState.objects[this.sha] = {
       type: "commit",
       data: this._currentBuffer,
     };

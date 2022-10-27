@@ -12,13 +12,13 @@ export type ObjectsType = {
 };
 
 export class GitState {
-  private static _objects: ObjectsType = {};
+  private _objects: ObjectsType = {};
 
-  public static get objects(): ObjectsType {
+  public get objects(): ObjectsType {
     return this._objects;
   }
 
-  public static toArray() {
+  public toArray() {
     const data: {
       key: string;
       data: Buffer;
@@ -30,45 +30,45 @@ export class GitState {
     return data;
   }
 
-  private static _repoPath: string = "";
-  public static get repoPath(): string {
-    return GitState._repoPath;
+  private _repoPath: string = "";
+  public get repoPath(): string {
+    return this._repoPath;
   }
 
-  static root: GitTree;
-  static indexCommitHash: string;
+  root: GitTree;
+  indexCommitHash: string;
 
-  public static initialize(repoPath: string) {
+  public initialize(repoPath: string) {
     this._repoPath = repoPath;
   }
 
-  public static initializeTree(repoPath: string) {
+  public initializeTree(repoPath: string) {
     this._repoPath = repoPath;
     return this._createTree(repoPath, ".", true);
   }
 
-  public static initializeTreeAndCommit(
+  initializeTreeAndCommit = (
     repoPath: string,
     commitData: CommitConstructor
-  ) {
+  ) => {
     this.initializeTree(repoPath);
     this.addCommit(commitData);
 
     return this.root;
+  };
+
+  private _commits: Commit[] = [];
+  public get commits(): Commit[] {
+    return this._commits;
   }
 
-  private static _commits: Commit[] = [];
-  public static get commits(): Commit[] {
-    return GitState._commits;
-  }
-
-  static addCommit(commitData: CommitConstructor) {
+  addCommit = (commitData: CommitConstructor) => {
     if (this.commits.length === 0) {
       this.commits.push(
-        Commit.create({ ...commitData, treeHash: this.root.sha })
+        Commit.create(this, { ...commitData, treeHash: this.root.sha })
       );
     } else {
-      const createdCommit = Commit.create({
+      const createdCommit = Commit.create(this, {
         ...commitData,
         treeHash: this.root.sha,
         parent: this.commits.at(-1),
@@ -80,19 +80,19 @@ export class GitState {
     }
 
     this.indexCommitHash = this.commits.at(-1)!.sha;
-  }
+  };
 
-  private static _createTree(
+  private _createTree = (
     relativePath: string,
     dirPath: string,
     root?: boolean
-  ) {
+  ) => {
     const completePath = join(relativePath, dirPath);
     if (!lstatSync(completePath).isDirectory()) {
       throw new GitSchemaError("Received a non directory");
     }
 
-    let tree: GitTree = GitTree.create(root ? "." : dirPath);
+    let tree: GitTree = GitTree.create(this, root ? "." : dirPath);
 
     const files = readdirSync(completePath);
 
@@ -111,10 +111,10 @@ export class GitState {
       this.root = tree;
     }
     return tree;
-  }
+  };
 
-  public static resetState() {
+  public resetState = () => {
     this._repoPath = "";
     this._objects = {};
-  }
+  };
 }

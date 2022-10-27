@@ -6,8 +6,9 @@ import { BeeSon } from "@fairdatasociety/beeson";
 import { GitSchemaError } from "../src/error";
 describe("test", () => {
   it("GitTree cannot add root as child", () => {
+    let gitState = new GitState();
     try {
-      GitTree.create(".").addTree(GitTree.create("."));
+      GitTree.create(gitState, ".").addTree(GitTree.create(gitState, "."));
     } catch (error) {
       expect(error instanceof GitSchemaError).toBe(true);
 
@@ -27,9 +28,11 @@ describe("test", () => {
 
     console.log((await hashBlob({ object: "data" })).object);
 
-    GitState.initialize(join(__dirname, ".."));
+    let gitState = new GitState();
 
-    const tree = GitTree.create(".");
+    gitState.initialize(join(__dirname, ".."));
+
+    const tree = GitTree.create(gitState, ".");
 
     const readMeEntry = tree.addIndexEntry("README.md");
     tree.addIndexEntry("README.md");
@@ -42,7 +45,11 @@ describe("test", () => {
     console.log(readMeEntry.filePath);
 
     console.log("====from buffer====");
-    const treeFromBuffer = GitTree.fromBuffer(tree.currentBuffer, ".");
+    const treeFromBuffer = GitTree.fromBuffer(
+      gitState,
+      tree.currentBuffer,
+      "."
+    );
 
     treeFromBuffer.entries.map((e) => {
       e.deserialize();
@@ -52,7 +59,8 @@ describe("test", () => {
     });
 
     // complete end to end flow
-    GitState.resetState();
+    // can also create a new gitState now
+    gitState.resetState();
     const authorData = {
       email: "97761020+SurroundingArt64@users.noreply.github.com",
       name: "SurroundingArt64",
@@ -62,25 +70,27 @@ describe("test", () => {
         value: "0000",
       },
     };
-    GitState.initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
-      author: authorData,
-      committer: authorData,
-      message: "feat: initial commit",
-      treeHash: "",
-    }).entries.map((e) => {
-      if (e instanceof IndexEntry) {
-        console.log(
-          `${e.definitions.mode.value.toString(8)} blob ${
-            e.definitions.sha.value
-          }   ${e.filePath}`
-        );
-      } else {
-        console.log(`040000 tree ${e.sha}   ${e.filePath}`);
-      }
-    });
+    gitState
+      .initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
+        author: authorData,
+        committer: authorData,
+        message: "feat: initial commit",
+        treeHash: "",
+      })
+      .entries.map((e) => {
+        if (e instanceof IndexEntry) {
+          console.log(
+            `${e.definitions.mode.value.toString(8)} blob ${
+              e.definitions.sha.value
+            }   ${e.filePath}`
+          );
+        } else {
+          console.log(`040000 tree ${e.sha}   ${e.filePath}`);
+        }
+      });
 
     const beeSon = new BeeSon({
-      json: { refs: GitState.toArray(), indexHash: GitState.indexCommitHash },
+      json: { refs: gitState.toArray(), indexHash: gitState.indexCommitHash },
     });
 
     /// schema definition

@@ -43,24 +43,37 @@ export class GitTree {
     return this._currentBuffer;
   }
 
-  static fromBuffer(buf: Buffer, filePath: string): GitTree {
+  private _gitState: GitState;
+  public get gitState(): GitState {
+    return this._gitState;
+  }
+
+  static fromBuffer(
+    gitState: GitState,
+    buf: Buffer,
+    filePath: string
+  ): GitTree {
     const _object = new GitTree();
 
     _object._currentBuffer = buf;
 
     _object._filePath = filePath;
 
+    _object._gitState = gitState;
+
     _object.deserialize();
 
     return _object;
   }
 
-  static create(filePath: string): GitTree {
+  static create(gitState: GitState, filePath: string): GitTree {
     const _object = new GitTree();
 
     _object.serialize();
 
     _object._filePath = filePath;
+
+    _object._gitState = gitState;
 
     return _object;
   }
@@ -78,7 +91,7 @@ export class GitTree {
       let indexEntry = IndexEntry.withoutDeserialization(leftOverBuffer);
       ({ leftOverBuffer } = indexEntry.deserialize());
       indexEntry.updateCompressed(
-        GitState.objects[indexEntry.definitions.sha.value].data
+        this._gitState.objects[indexEntry.definitions.sha.value].data
       );
       this._indexEntries.push(indexEntry);
     }
@@ -130,7 +143,7 @@ export class GitTree {
 
     this.header.entries.value = this.entries.length;
 
-    GitState.objects[tree.sha] = {
+    this._gitState.objects[tree.sha] = {
       data: tree.currentBuffer,
       type: "tree",
     };
@@ -141,11 +154,11 @@ export class GitTree {
 
     const indexEntry =
       loc === -1
-        ? IndexEntry.create(GitState.repoPath, filePath)
+        ? IndexEntry.create(this._gitState.repoPath, filePath)
         : this.entries[loc];
 
     if (indexEntry instanceof IndexEntry) {
-      GitState.objects[indexEntry.definitions.sha.value] = {
+      this._gitState.objects[indexEntry.definitions.sha.value] = {
         data: indexEntry.compressed,
         type: "blob",
       };
@@ -153,7 +166,7 @@ export class GitTree {
       if (loc === -1) {
         this.entries.push(indexEntry);
       } else {
-        (this.entries[loc] as IndexEntry).serialize(GitState.repoPath);
+        (this.entries[loc] as IndexEntry).serialize(this._gitState.repoPath);
       }
     }
 
