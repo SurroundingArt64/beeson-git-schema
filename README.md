@@ -2,10 +2,15 @@
 
 ## Usage
 
-```ts
+Check output of the following
 
-// A state machine 
-GitState.resetState();
+```sh
+NODE_RUN_TEST=true ts-node ./src/index.ts
+```
+
+```ts
+// A state machine
+const gitState = new GitState();
 
 // Author data. Can be varied between commits.
 const authorData = {
@@ -20,31 +25,35 @@ const authorData = {
 
 // Takes a path to a folder.
 // Initializes a git tree with index at the top.
-// Recursively updates the tree and creates deflated blobs of all files 
+// Recursively updates the tree and creates deflated blobs of all files
 // and stores as refs.
 
-// Second arguement is the commit data with an empty treeHash.
+// Second argument is the commit data with an empty treeHash.
 // The treeHash is computed at run-time.
-GitState.initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
-  author: authorData,
-  committer: authorData,
-  message: "feat: initial commit",
-  treeHash: "",
-}).entries.map((e) => {
-  // Logging data of the tree
-  if (e instanceof IndexEntry) {
-    console.log(
-      `${e.definitions.mode.value.toString(8)} blob ${
-        e.definitions.sha.value
-      }   ${e.filePath}`
-    );
-  } else {
-    // Indicates a subtree/directory
-    console.log(`040000 tree ${e.sha}   ${e.filePath}`);
-  }
-});
+gitState
+  .initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
+    author: authorData,
+    committer: authorData,
+    message: "feat: initial commit",
+    treeHash: "",
+  })
+  .entries.map((e) => {
+    // Logging data of the tree
+    if (e instanceof IndexEntry) {
+      console.log(
+        `${e.definitions.mode.value.toString(8)} blob ${
+          e.definitions.sha.value
+        }   ${e.filePath}`
+      );
+    } else {
+      // Indicates a subtree/directory
+      console.log(`040000 tree ${e.sha}   ${e.filePath}`);
+    }
+  });
 
 const beeSon = new BeeSon({
-  json: { refs: GitState.toArray(), indexHash: GitState.indexCommitHash },
+  json: { refs: gitState.toArray(), indexHash: gitState.indexCommitHash },
 });
+
+console.log(beeSon);
 ```

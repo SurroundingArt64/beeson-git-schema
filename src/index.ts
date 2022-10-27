@@ -49,6 +49,8 @@ if (process.env.NODE_RUN_TEST === "true") {
 
     // complete end to end flow
     gitState.resetState();
+
+    // Author data. Can be varied between commits.
     const authorData = {
       email: "97761020+SurroundingArt64@users.noreply.github.com",
       name: "SurroundingArt64",
@@ -58,6 +60,14 @@ if (process.env.NODE_RUN_TEST === "true") {
         value: "0000",
       },
     };
+
+    // Takes a path to a folder.
+    // Initializes a git tree with index at the top.
+    // Recursively updates the tree and creates deflated blobs of all files
+    // and stores as refs.
+
+    // Second argument is the commit data with an empty treeHash.
+    // The treeHash is computed at run-time.
     gitState
       .initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
         author: authorData,
@@ -66,6 +76,7 @@ if (process.env.NODE_RUN_TEST === "true") {
         treeHash: "",
       })
       .entries.map((e) => {
+        // Logging data of the tree
         if (e instanceof IndexEntry) {
           console.log(
             `${e.definitions.mode.value.toString(8)} blob ${
@@ -73,6 +84,7 @@ if (process.env.NODE_RUN_TEST === "true") {
             }   ${e.filePath}`
           );
         } else {
+          // Indicates a subtree/directory
           console.log(`040000 tree ${e.sha}   ${e.filePath}`);
         }
       });
@@ -81,7 +93,6 @@ if (process.env.NODE_RUN_TEST === "true") {
       json: { refs: gitState.toArray(), indexHash: gitState.indexCommitHash },
     });
 
-    /// schema definition
     console.log(beeSon);
   };
 
