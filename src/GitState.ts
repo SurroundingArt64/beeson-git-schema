@@ -12,6 +12,10 @@ export type ObjectsType = {
 };
 
 export class GitState {
+  version() {
+    return "2";
+  }
+
   private _objects: ObjectsType = {};
 
   public get objects(): ObjectsType {

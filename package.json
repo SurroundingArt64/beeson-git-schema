@@ -1,14 +1,23 @@
 {
   "name": "git-beeson-schema",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
-    "test": "jest"
+    "test": "jest --coverage",
+    "prepublishOnly": "./prepublish.sh"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "SurroundingArt64",
+    "email": "97761020+SurroundingArt64@users.noreply.github.com",
+    "url": "https://github.com/surroundingArt64/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SurroundingArt64/beeson-git-schema"
+  },
   "dependencies": {
     "@fairdatasociety/beeson": "^0.1.1"
   },
