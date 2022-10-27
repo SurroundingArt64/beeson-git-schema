@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "./index";
 import { readFileSync, statSync } from "fs";
 import { userInfo } from "os";
 import { resolve } from "path";

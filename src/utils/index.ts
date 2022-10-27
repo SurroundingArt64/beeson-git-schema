@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { GitSchemaError } from "../error";
 import { deflateSync } from "zlib";
 
 export function msToNano(timeInMs: number) {
@@ -7,6 +8,12 @@ export function msToNano(timeInMs: number) {
 
 export function getNumberFromBuffer(buf: Buffer) {
   return Number("0x" + buf.toString("hex"));
+}
+
+export function assert(value?: boolean, message?: string) {
+  if (!value) {
+    throw new GitSchemaError(message ?? "Panicked at assertion");
+  }
 }
 
 export function getFlags(base: number) {

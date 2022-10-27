@@ -1,4 +1,4 @@
-import { assert } from "console";
+import { assert } from "./index";
 import { GitState } from "../GitState";
 import { hashObject } from "./hashObject";
 
@@ -90,7 +90,10 @@ export class Commit {
     committer: Author,
     message: string
   ) {
-    assert(message && message !== "", "Message cannot be empty");
+    assert(
+      message !== "" && message !== undefined && message !== null,
+      "Message cannot be empty"
+    );
     const data: string[] = [];
 
     data.push(`tree ${treeHash}`);

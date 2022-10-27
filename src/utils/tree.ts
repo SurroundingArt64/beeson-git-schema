@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "./index";
 import { GitState } from "../GitState";
 import { hashObject } from "./hashObject";
 import { GitSchemaError } from "../error";
