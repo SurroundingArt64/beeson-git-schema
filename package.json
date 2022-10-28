@@ -2,7 +2,8 @@
   "name": "git-beeson-schema",
   "version": "0.0.3",
   "description": "",
-  "main": "dist/build/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "test": "jest --coverage",

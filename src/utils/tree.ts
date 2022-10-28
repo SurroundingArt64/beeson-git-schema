@@ -103,6 +103,22 @@ export class GitTree {
     return { numberOfEntries };
   }
 
+  printIndex() {
+    this.entries.map((e) => {
+      // Logging data of the tree
+      if (e instanceof IndexEntry) {
+        console.log(
+          `${e.definitions.mode.value.toString(8)} blob ${
+            e.definitions.sha.value
+          }   ${e.filePath}`
+        );
+      } else {
+        // Indicates a subtree/directory
+        console.log(`040000 tree ${e.sha}   ${e.filePath}`);
+      }
+    });
+  }
+
   private serialize() {
     let currentBuffer = Buffer.from([]);
     Object.entries(this.header).map(([_key, { value, length }]) => {
@@ -130,6 +146,10 @@ export class GitTree {
   addTree(tree: GitTree) {
     const loc = this.entries.map((e) => e.filePath).indexOf(tree.filePath);
 
+    if (tree === undefined) {
+      throw new GitSchemaError("Cannot append undefined tree");
+    }
+
     if (loc === -1) {
       this.entries.push(tree);
     }
@@ -155,6 +175,10 @@ export class GitTree {
       loc === -1
         ? IndexEntry.create(this._gitState.repoPath, filePath)
         : this.entries[loc];
+
+    if (indexEntry === undefined) {
+      throw new GitSchemaError("Cannot append undefined tree");
+    }
 
     if (indexEntry instanceof IndexEntry) {
       this._gitState.objects[indexEntry.definitions.sha.value] = {

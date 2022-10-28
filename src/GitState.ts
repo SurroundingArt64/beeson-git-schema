@@ -105,9 +105,13 @@ export class GitState {
       const stats = lstatSync(join(completePath, file));
 
       if (stats.isDirectory()) {
-        tree.addTree(this._createTree(relativePath, join(dirPath, file)));
+        if (!stats.isSymbolicLink()) {
+          tree.addTree(this._createTree(relativePath, join(dirPath, file)));
+        }
       } else {
-        tree.addIndexEntry(join(dirPath, file));
+        if (!stats.isSymbolicLink()) {
+          tree.addIndexEntry(join(dirPath, file));
+        }
       }
     }
 
