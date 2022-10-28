@@ -89,6 +89,7 @@ export class GitTree {
     for (let index = 0; index < numberOfEntries; index++) {
       let indexEntry = IndexEntry.withoutDeserialization(leftOverBuffer);
       ({ leftOverBuffer } = indexEntry.deserialize());
+
       indexEntry.updateCompressed(
         this._gitState.objects[indexEntry.definitions.sha.value].data
       );
@@ -131,7 +132,7 @@ export class GitTree {
       currentBuffer = Buffer.concat([currentBuffer, buf]);
     });
 
-    this._indexEntries.forEach((e) => {
+    this.entries.forEach((e) => {
       currentBuffer = Buffer.concat([currentBuffer, e.currentBuffer]);
     });
 

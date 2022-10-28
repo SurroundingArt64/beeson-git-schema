@@ -4,33 +4,37 @@ import { GitState, GitTree, IndexEntry } from "../src";
 import { join } from "path";
 import { BeeSon } from "@fairdatasociety/beeson";
 import { GitSchemaError } from "../src/error";
+
+import { expect } from "chai";
+
 describe("test", () => {
   it("GitTree cannot add root as child", () => {
     let gitState = new GitState();
+    expect(gitState.version()).to.eq("2");
     try {
       GitTree.create(gitState, ".").addTree(GitTree.create(gitState, "."));
     } catch (error) {
-      expect(error instanceof GitSchemaError).toBe(true);
+      expect(error instanceof GitSchemaError).to.eq(true);
 
       if (error instanceof GitSchemaError) {
-        expect(error.message).toBe("Cannot have root as a child");
+        expect(error.message).to.eq("Cannot have root as a child");
       }
     }
   });
 
   it("runs (ok)", async () => {
-    console.log(
-      hashObject({
-        data: "blob",
-        objectType: "blob",
-      })?.data
-    );
+    const fromLib = hashObject({
+      data: "data",
+      objectType: "blob",
+    })?.data;
 
-    console.log((await hashBlob({ object: "data" })).object);
+    const fromIso = (await hashBlob({ object: "data" })).object;
+
+    expect(fromIso.toString()).to.eq(fromLib.toString());
 
     let gitState = new GitState();
 
-    gitState.initialize(join(__dirname, ".."));
+    gitState.initialize(join(__dirname, "..", "test_repo"));
 
     const tree = GitTree.create(gitState, ".");
 
@@ -38,13 +42,11 @@ describe("test", () => {
     tree.addIndexEntry("README.md");
     const gitIgnoreEntry = tree.addIndexEntry(".gitignore");
 
-    console.log("====from initial====");
     gitIgnoreEntry.deserialize();
-    console.log(gitIgnoreEntry.filePath);
+    expect(gitIgnoreEntry.filePath).to.eq(".gitignore");
     readMeEntry.deserialize();
-    console.log(readMeEntry.filePath);
+    expect(readMeEntry.filePath).to.eq("README.md");
 
-    console.log("====from buffer====");
     const treeFromBuffer = GitTree.fromBuffer(
       gitState,
       tree.currentBuffer,
@@ -53,9 +55,6 @@ describe("test", () => {
 
     treeFromBuffer.entries.map((e) => {
       e.deserialize();
-      if (e instanceof IndexEntry) {
-        console.log(e.filePath, e.getFileData());
-      }
     });
 
     // complete end to end flow
@@ -70,30 +69,18 @@ describe("test", () => {
         value: "0000",
       },
     };
-    gitState
-      .initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
-        author: authorData,
-        committer: authorData,
-        message: "feat: initial commit",
-        treeHash: "",
-      })
-      .entries.map((e) => {
-        if (e instanceof IndexEntry) {
-          console.log(
-            `${e.definitions.mode.value.toString(8)} blob ${
-              e.definitions.sha.value
-            }   ${e.filePath}`
-          );
-        } else {
-          console.log(`040000 tree ${e.sha}   ${e.filePath}`);
-        }
-      });
+    gitState.initializeTreeAndCommit(join(__dirname, "..", "test_repo"), {
+      author: authorData,
+      committer: authorData,
+      message: "feat: initial commit",
+      treeHash: "",
+    });
 
     const beeSon = new BeeSon({
       json: { refs: gitState.toArray(), indexHash: gitState.indexCommitHash },
     });
 
     /// schema definition
-    expect(beeSon).toMatchObject({});
+    expect(beeSon).ok;
   });
 });

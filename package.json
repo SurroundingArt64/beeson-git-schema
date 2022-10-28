@@ -20,7 +20,9 @@
     "url": "https://github.com/SurroundingArt64/beeson-git-schema"
   },
   "dependencies": {
-    "@fairdatasociety/beeson": "^0.1.1"
+    "@fairdatasociety/beeson": "^0.1.1",
+    "@types/chai": "^4.3.3",
+    "chai": "^4.3.6"
   },
   "devDependencies": {
     "@babel/core": "^7.19.6",
